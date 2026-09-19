@@ -34,6 +34,32 @@ Rules:
 - If a value is genuinely illegible, set it to an empty string and confidence to "low".
 - If the board lists more than one route, return each as a separate object in "routes".`;
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryable(err) {
+  const status = err && (err.status || err.code);
+  const text = (err && err.message) || "";
+  return status === 503 || /\b503\b|UNAVAILABLE|overloaded|high demand/i.test(text);
+}
+
+async function generateWithRetry(params, maxAttempts = 4) {
+  let lastErr;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await ai.models.generateContent(params);
+    } catch (err) {
+      lastErr = err;
+      if (attempt === maxAttempts || !isRetryable(err)) throw err;
+      const backoffMs = 800 * 2 ** (attempt - 1); // 0.8s, 1.6s, 3.2s
+      console.warn(`Gemini 503, retrying (attempt ${attempt}/${maxAttempts}) after ${backoffMs}ms`);
+      await sleep(backoffMs);
+    }
+  }
+  throw lastErr;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
@@ -52,7 +78,7 @@ export default async function handler(req, res) {
   }
   
   try {
-    const response = await ai.models.generateContent({
+    const response = await generateWithRetry({
       model: "gemini-3.6-flash",
       contents: [
         { inlineData: { mimeType, data: imageBase64 } },
@@ -80,6 +106,9 @@ export default async function handler(req, res) {
     res.status(200).json(parsed);
   } catch (err) {
     console.error("Gemini extraction failed:", err);
-    res.status(500).json({ error: err.message || "Extraction failed." });
+    const friendly = isRetryable(err)
+    ? "Google's model is under heavy load right now, even after retrying a few times. Wait a moment and try again."
+    : err.message || "Extraction failed.";
+    res.status(500).json({ error: friendly });
   }
 }
