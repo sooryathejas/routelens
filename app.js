@@ -52,13 +52,13 @@ fileInput.addEventListener("change", () => {
   selectedFile = file;
   fileName.textContent = file.name || "File selected";
   scanBtn.disabled = false;
-  
+
   if (file.type === "application/pdf") {
     scanPreview.innerHTML = `
-    <div class="scan-preview__pdf">
-    <span class="scan-preview__pdf-icon">📄</span>
-    <span>${escapeHtml(file.name || "Timetable.pdf")}</span>
-    </div>`;
+      <div class="scan-preview__pdf">
+        <span class="scan-preview__pdf-icon">📄</span>
+        <span>${escapeHtml(file.name || "Timetable.pdf")}</span>
+      </div>`;
   } else {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -73,6 +73,15 @@ scanBtn.addEventListener("click", scanImage);
 
 async function scanImage() {
   if (!selectedFile) return;
+
+  const MAX_BYTES = 4 * 1024 * 1024; // raw file size before encoding — generous now that images are compressed client-side
+  if (selectedFile.size > MAX_BYTES) {
+    showStatus(
+      `That file is ${(selectedFile.size / (1024 * 1024)).toFixed(1)}MB — please use a file under 4MB and try again.`,
+      true
+    );
+    return;
+  }
 
   scanBtn.disabled = true;
   showStatus(LOADING_MESSAGES[0], false);
@@ -90,18 +99,29 @@ async function scanImage() {
       body: JSON.stringify({ imageBase64: base64, mimeType }),
     });
 
-    const data = await res.json();
     clearInterval(rotator);
 
     if (!res.ok) {
-      showStatus(data.error || "Something went wrong reading that image.", true);
+      let message = `Extraction failed (HTTP ${res.status}).`;
+      if (res.status === 413) {
+        message = "That file is too large for the server to accept. Try a smaller file or a lower-resolution photo.";
+      } else {
+        try {
+          const data = await res.json();
+          if (data && data.error) message = data.error;
+        } catch (_) {
+          // Response wasn't JSON (a raw error page) — keep the status-based message above.
+        }
+      }
+      showStatus(message, true);
       scanBtn.disabled = false;
       return;
     }
 
+    const data = await res.json();
     currentRoutes = data.routes || [];
     if (currentRoutes.length === 0) {
-      showStatus("No routes were found in that image. Try a clearer or closer photo.", true);
+      showStatus("No routes were found in that file. Try a clearer photo or a different page.", true);
       scanBtn.disabled = false;
       return;
     }
@@ -129,6 +149,22 @@ function hideStatus() {
 }
 
 function fileToBase64(file) {
+  if (file.type === "application/pdf") {
+    // PDFs go through untouched — Gemini reads PDF pages natively, no resizing needed,
+    // and a PDF can't be loaded into an <img>/Canvas the way a photo can.
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(",")[1];
+        resolve({ base64, mimeType: "application/pdf" });
+      };
+      reader.onerror = () => reject(new Error("Could not read the selected PDF."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Images: downscale and re-compress client-side so large phone photos stay
+  // comfortably under Vercel's request-body limit before they're even sent.
   const MAX_DIMENSION = 1600; // px, long edge
   const JPEG_QUALITY = 0.85;
 
