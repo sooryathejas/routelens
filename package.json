@@ -1,0 +1,11 @@
+{
+  "name": "routelens",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Scan a bus timetable board, correct it, export it as GTFS. Built for ANAVANDI 2026 (SC-04).",
+  "scripts": {},
+  "dependencies": {
+    "@google/genai": "^0.15.0"
+  }
+}

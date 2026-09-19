@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RouteLens — board to data</title>
+<meta name="description" content="Scan a bus timetable board, correct it in seconds, export it as data every trip planner can read." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans:ital@1&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Malayalam:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="board-hero">
+  <div class="board-hero__inner">
+    <h1 class="destination-board" aria-label="RouteLens">
+      <span>ROUTE</span><span class="destination-board__accent">LENS</span>
+    </h1>
+    <p class="board-hero__tag">Point a camera at any bus board. Get back the exact data trip-planning apps already know how to read.</p>
+  </div>
+</header>
+
+<main>
+
+  <section id="scan" class="ticket-panel">
+    <div class="ticket-panel__head">
+      <h2>Scan a timetable</h2>
+      <p>Works on boards, printed sheets, or a photo of a PDF. Malayalam and English, together or separate.</p>
+    </div>
+
+    <div class="scan-preview" id="scanPreview">
+      <div class="scan-preview__empty">No board scanned yet — snap a photo or upload one below.</div>
+    </div>
+
+    <div class="scan-status" id="scanStatus" role="status" aria-live="polite" hidden></div>
+
+    <div class="input-bar">
+      <button type="button" class="input-bar__icon" id="cameraBtn" title="Use camera" aria-label="Use camera">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="14" r="3.5"/></svg>
+      </button>
+      <button type="button" class="input-bar__icon" id="uploadBtn" title="Upload an image" aria-label="Upload an image">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21.4 11.2 12.7 20a4.5 4.5 0 0 1-6.4-6.4L14.9 5a3 3 0 0 1 4.2 4.2l-8.6 8.6a1.5 1.5 0 0 1-2.1-2.1l7.9-7.9"/></svg>
+      </button>
+      <input type="file" id="fileInput" accept="image/*" capture="environment" hidden />
+      <span class="input-bar__filename" id="fileName">No file selected</span>
+      <button type="button" class="input-bar__scan" id="scanBtn" disabled>Scan timetable</button>
+    </div>
+  </section>
+
+  <section id="results" class="results-panel" hidden>
+    <div class="results-panel__head">
+      <h2>Check what we read</h2>
+      <p>Amber and red rows are worth a second look. Tap any cell to fix it — nothing is exported until you're happy with it.</p>
+    </div>
+    <div id="routesContainer"></div>
+    <div class="results-actions">
+      <button type="button" id="saveBtn" class="btn btn--primary">Save to timetable library</button>
+      <div class="export-group">
+        <span class="export-group__label">Export</span>
+        <button type="button" id="exportGtfs" class="btn btn--ghost" disabled>GTFS</button>
+        <button type="button" id="exportCsv" class="btn btn--ghost" disabled>CSV</button>
+        <button type="button" id="exportJson" class="btn btn--ghost" disabled>JSON</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="library" class="library-panel">
+    <div class="library-panel__head">
+      <h2>Next bus</h2>
+      <p><span id="libraryCount">0</span> route(s) saved. Search across every board you've scanned so far.</p>
+    </div>
+    <div class="next-bus-form">
+      <label class="next-bus-form__field">
+        <span>From</span>
+        <input list="stopList" id="fromInput" placeholder="Start typing a stop" autocomplete="off" />
+      </label>
+      <label class="next-bus-form__field">
+        <span>To</span>
+        <input list="stopList" id="toInput" placeholder="Start typing a stop" autocomplete="off" />
+      </label>
+      <datalist id="stopList"></datalist>
+      <button type="button" id="searchBtn" class="btn btn--primary">Find next bus</button>
+    </div>
+    <div id="searchResults" class="search-results"></div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>Built for ANAVANDI 2026, selection challenge SC-04. Gemini 2.5 Flash reads the board — your correction makes it trustworthy.</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="app.js" defer></script>
+</body>
+</html>
