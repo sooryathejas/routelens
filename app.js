@@ -35,12 +35,14 @@ const searchResultsEl = document.getElementById("searchResults");
 
 // ---------- Capture / upload ----------
 cameraBtn.addEventListener("click", () => {
+  fileInput.setAttribute("accept", "image/*");
   fileInput.setAttribute("capture", "environment");
   fileInput.click();
 });
 
 uploadBtn.addEventListener("click", () => {
   fileInput.removeAttribute("capture");
+  fileInput.setAttribute("accept", "image/*,application/pdf");
   fileInput.click();
 });
 
@@ -48,14 +50,22 @@ fileInput.addEventListener("change", () => {
   const file = fileInput.files && fileInput.files[0];
   if (!file) return;
   selectedFile = file;
-  fileName.textContent = file.name || "Photo captured";
+  fileName.textContent = file.name || "File selected";
   scanBtn.disabled = false;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    scanPreview.innerHTML = `<img src="${e.target.result}" alt="Selected timetable" />`;
-  };
-  reader.readAsDataURL(file);
+  
+  if (file.type === "application/pdf") {
+    scanPreview.innerHTML = `
+    <div class="scan-preview__pdf">
+    <span class="scan-preview__pdf-icon">📄</span>
+    <span>${escapeHtml(file.name || "Timetable.pdf")}</span>
+    </div>`;
+  } else {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      scanPreview.innerHTML = `<img src="${e.target.result}" alt="Selected timetable" />`;
+    };
+    reader.readAsDataURL(file);
+  }
 });
 
 // ---------- Scan ----------

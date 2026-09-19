@@ -30,6 +30,7 @@ Return ONLY valid JSON — no markdown fences, no commentary before or after —
 
 Rules:
 - Keep stops in the order they appear on the board — that order is the direction of travel.
+- If the input is a multi-page PDF, read every page in order and combine everything into the same "routes" array — do not stop after the first page.
 - If a value is genuinely illegible, set it to an empty string and confidence to "low".
 - If the board lists more than one route, return each as a separate object in "routes".`;
 
