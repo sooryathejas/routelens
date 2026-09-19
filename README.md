@@ -22,7 +22,9 @@ Searching "next bus" across every board scanned so far — no server database, j
 
 ## Demo video
 
-_[https://youtu.be/Sw58bclfTbQ?si=gEGVf82afRZvT3NS]_
+## Demo video
+
+[![Watch the demo](https://img.youtube.com/vi/Sw58bclfTbQ/maxresdefault.jpg)](https://youtu.be/Sw58bclfTbQ)
 
 ## What's here
 
